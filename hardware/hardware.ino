@@ -23,6 +23,10 @@
 // #include "mqtt.h"
 // #endif
 
+#ifndef FORECAST_H
+#include "foreCast.h"
+#endif
+
 // ADD YOUR IMPORTS HERE
 #include "DHT.h"
 
@@ -85,10 +89,10 @@
 #define DHTTYPE DHT22
 
 // DEFINE THE CONTROL PINS FOR THE BMP280
-// #define BMP_SCK  (13)
-// #define BMP_MISO (12)
-// #define BMP_MOSI (11)
-// #define BMP_CS   (10)
+#define BMP_SCK  (13)
+#define BMP_MISO (12)
+#define BMP_MOSI (11)
+#define BMP_CS   (10)
 
 
 // MQTT CLIENT CONFIG  
@@ -123,10 +127,10 @@ bool isNumber(double number);
  
 
 /* Declare your functions below */ 
-double convert_Celsius_to_fahrenheit(double c);
-double convert_fahrenheit_to_Celsius(double f);
-double calcHeatIndex(double Temp, double Humid);
-
+// double convert_Celsius_to_fahrenheit(double c);
+// double convert_fahrenheit_to_Celsius(double f);
+// double calcHeatIndex(double Temp, double Humid);
+void display();
 
 /* Init class Instances for the DHT22 etcc */
 DHT dht(DHTPIN, DHTTYPE);  
@@ -154,11 +158,12 @@ void setup() {
   /* Add all other necessary sensor Initializations and Configurations here */
   dht.begin();
   bmp.begin(0x76);
+  Wire.begin(21, 22); 
   pinMode(DHTPIN, INPUT);
   pinMode(soil_m, INPUT);
   // initialize();     // INIT WIFI, MQTT & NTP 
   // vButtonCheckFunction(); // UNCOMMENT IF USING BUTTONS INT THIS LAB, THEN ADD LOGIC FOR INTERFACING WITH BUTTONS IN THE vButtonCheck FUNCTION
-  display();
+  //display();
 }
   
 
@@ -176,21 +181,21 @@ void loop() {
   Serial.print(F("BMP Temperature = "));
   Serial.print(bmp.readTemperature());
   Serial.println(" *C");
-  
+
   h = dht.readHumidity();
-  Serial.print("Humidity: ");
-  Serial.println(h);
+  Serial.print("Humidity =  ");
+  Serial.print(h);
+  Serial.print("%");
           
   double ft = (t * 9.0/5.0) + 32;
   double HI = -42.379 + (2.04901523 * ft) + (10.14333127 * h) + (-0.22475541 * ft * h) + (-0.00683783 * pow(ft, 2))  + (-0.05481717 * pow(h,2)) + (0.00122874 * pow(ft, 2) * h)  + (0.00085282 * ft * pow(h,2)) + (-0.00000199 * pow(ft, 2) * pow(h,2));
   hI =  (5.0/9.0) * (HI - 32);
-  Serial.print("Heat Index: ");
+  Serial.print("Heat Index =  ");
   Serial.print(hI);
-  Serial.println(" *C");
 
   int soilVal = analogRead(soil_m);
   Serial.println(soilVal);
-  conVal = map(soilVal, 1450, 3900, 100, 0);
+  conVal = map(soilVal, 1500, 3900, 100, 0);
 
   if (conVal < 0)
   {
@@ -203,35 +208,36 @@ void loop() {
   Serial.print(F("Soil Moisture = "));
   Serial.print(conVal);
   Serial.println("%");
-  delay(2000);
 
   Serial.print(F("Pressure = "));
-  Serial.print(bmp.readPressure());
-  Serial.println(" Pa");
+  Serial.print(bmp.readPressure()/100);
+  Serial.println(" hPa");
 
   Serial.print(F("Approx altitude = "));
   Serial.print(bmp.readAltitude(1013.25)); /* Adjusted to local forecast! */
   Serial.println(" m");
 
   Serial.println("************************************************");
+  delay(2000);
   display();
 
   vTaskDelay(1000 / portTICK_PERIOD_MS);
+  //tft.fillScreen(0);
 }
 
 
 //####################################################################
 //#                          UTIL FUNCTIONS                          #       
 //####################################################################
-void vButtonCheck( void * pvParameters )  {
-    configASSERT( ( ( uint32_t ) pvParameters ) == 1 );     
+// void vButtonCheck( void * pvParameters )  {
+//     configASSERT( ( ( uint32_t ) pvParameters ) == 1 );     
       
-    for( ;; ) {
-        // Add code here to check if a button(S) is pressed
-        // then execute appropriate function if a button is pressed 
-        vTaskDelay(200 / portTICK_PERIOD_MS);  
-    }
-}
+//     for( ;; ) {
+//         // Add code here to check if a button(S) is pressed
+//         // then execute appropriate function if a button is pressed 
+//         vTaskDelay(200 / portTICK_PERIOD_MS);  
+//     }
+// }
 
 // void vUpdate( void * pvParameters )  {
 //     configASSERT( ( ( uint32_t ) pvParameters ) == 1 );    
@@ -271,15 +277,12 @@ void vButtonCheck( void * pvParameters )  {
 //     }
 // }
 
- 
-
-unsigned long getTimeStamp(void) {
-          // RETURNS 10 DIGIT TIMESTAMP REPRESENTING CURRENT TIME
-          time_t now;         
-          time(&now); // Retrieve time[Timestamp] from system and save to &now variable
-          return now;
-}
-
+// unsigned long getTimeStamp(void) {
+//           // RETURNS 10 DIGIT TIMESTAMP REPRESENTING CURRENT TIME
+//           time_t now;         
+//           time(&now); // Retrieve time[Timestamp] from system and save to &now variable
+//           return now;
+// }
 
 // void callback(char* topic, byte* payload, unsigned int length) {
 //   // ############## MQTT CALLBACK  ######################################
@@ -375,114 +378,96 @@ unsigned long getTimeStamp(void) {
 //   double hI = -42.379 + (2.04901523 * ft) + (10.14333127 * Humid) + (-0.22475541 * ft * Humid) + (-0.00683783 * pow(ft, 2))  + (-0.05481717 * pow(Humid,2)) + (0.00122874 * pow(ft, 2) * Humid)  + (0.00085282 * ft * pow(Humid,2)) + (-0.00000199 * pow(ft, 2) * pow(Humid,2));
 //   return convert_fahrenheit_to_Celsius(hI);
 // }
-// //HI= c1+c2T+c3R+c4TR+c5T2+c6R2+c7T2R+c8TR2+c9T2R2
-// bool isNumber(double number){       
-//         char item[20];
-//         snprintf(item, sizeof(item), "%f\n", number);
-//         if( isdigit(item[0]) )
-//           return true;
-//         return false; 
-// } 
+
 
 void display(){
-  //Section to display the temperature value, Humidity, Soil Moisture in Percentage,Pressure, and Altitude on the TFT Display      tft.fillRect(0, 0, tft.width(), tft.height(), ILI9341_MAGENTA);
+  //Section to display the temperature value, Humidity, Soil Moisture in Percentage,Pressure, and Altitude on the TFT Display
   tft.setRotation(1);
   //tft.fillRect(0, 0, tft.width()-2, tft.height()-2, ILI9341_WHITE);
 
-  tft.drawRoundRect(1, 6, tft.width()/2, 71, 5, ILI9341_MAGENTA);
-  tft.drawRoundRect(160, 6, tft.width()/2, 71, 5, ILI9341_MAGENTA);
+  //RECTANGLE 1 - displays the temperatures read from the DHT22 and BMP280 sensors
+  tft.drawRect(1, 4, tft.width()-2, 72, ILI9341_GREEN);
 
-  tft.drawRoundRect(1, 76, tft.width()/2, 71, 5, ILI9341_MAGENTA);
-  tft.drawRoundRect(160, 76, tft.width()/2, 71, 5, ILI9341_MAGENTA);
+  tft.drawBitmap(3, 10, sun, 50, 50, ILI9341_YELLOW, ILI9341_WHITE);  //sun picture
+  tft.drawBitmap(260, 170, partlyCloudyDay, 50, 50, ILI9341_CYAN, ILI9341_WHITE); //partly cloudy picture
 
-  tft.drawRoundRect(1, 150, tft.width(), 71, 5, ILI9341_MAGENTA);
-  tft.drawRoundRect(1, 150, tft.width(), 71, 5, ILI9341_MAGENTA);
-
-  tft.drawRoundRect(250, 90, 220, 225, 5, ILI9341_WHITE);
-  tft.drawRoundRect(251, 91, 220, 225, 5, ILI9341_WHITE);
-
-  tft.fillRect(26, 90, 180, 40, ILI9341_GREEN);
-  tft.fillRect(270, 90, 180, 40, ILI9341_CYAN);
-
-  tft.setCursor(45, 100);
-  tft.setTextColor(ILI9341_BLACK);
-  tft.setTextSize(3);
-  tft.print("EXTERIOR");
-
-  tft.setCursor(288, 100);
-  tft.setTextColor(ILI9341_BLACK);
-  tft.setTextSize(3);
-  tft.print("INTERIOR");
-
-  tft.setCursor(160, 155);
-  tft.setTextColor(ILI9341_GREEN);
-  tft.setTextSize(4);
-  tft.print("%");
-
-  tft.setCursor(412, 165);
-  tft.setTextColor(ILI9341_CYAN);
-  tft.setTextSize(6);
-  tft.print("%");
-
-  tft.setCursor(175, 210);
-  tft.setTextColor(ILI9341_GREEN);
-  tft.setTextSize(4);
+  tft.setCursor(55, 23);
+  tft.setTextColor(ILI9341_DARKGREY, ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.println("DHT TEMP.");
+  tft.setCursor(55, 45);
+  tft.print(t);
+  tft.setTextSize(1);
+  tft.print("o");
+  tft.setTextSize(2);
   tft.print("C");
 
-  tft.setCursor(160, 210);
-  tft.setTextColor(ILI9341_GREEN);
+  tft.setCursor(195, 23);
+  tft.setTextColor(ILI9341_DARKGREY, ILI9341_WHITE);
   tft.setTextSize(2);
+  tft.println("BMP TEMP.");
+  tft.setCursor(195, 45);
+  tft.print(bmp.readTemperature());
+  tft.setTextSize(1);
   tft.print("o");
-
-  tft.setCursor(412, 230);
-  tft.setTextColor(ILI9341_CYAN);
-  tft.setTextSize(6);
+  tft.setTextSize(2);
   tft.print("C");
 
-  tft.setCursor(395, 230);
-  tft.setTextColor(ILI9341_CYAN);
+  //RECTANGLE 2 - displays the humidity reading from the DHT22
+  //            - displays the heat index calculated from the DHT22 humidity and temperature
+  //            - displays the pressure read from the BMP280 sensor
+  tft.drawRect(1, 76, tft.width()-2, 62, ILI9341_GREEN);
+
+  tft.setCursor(5, 85);
+  tft.setTextColor(ILI9341_DARKGREY, ILI9341_WHITE);
   tft.setTextSize(2);
-  tft.print("o");
+  tft.println("HUMIDITY");
+  tft.setCursor(5, 107);
+  tft.print(h);
+  tft.setTextSize(2);
+  tft.print("%");
 
-  tft.setCursor(160, 265);
-  tft.setTextColor(ILI9341_GREEN);
-  tft.setTextSize(4);
-  tft.print("mb");
-  // tft.fillRect(MARGIN + 3 * (BOX_WIDTH + SPACING), tft.height() - BOX_HEIGHT - MARGIN, BOX_WIDTH, BOX_HEIGHT, 10, ILI9341_MAGENTA);
-  //     tft.setCursor(2, 10);
-  //     tft.print(F("DHT Temperature:"));
-  //     tft.setTextSize(2);
-  //     tft.print(t);
-  //     tft.setTextSize(2);
-  //     tft.print(" C");
+  tft.drawLine(105, 76, 105, 138, ILI9341_GREEN);
 
-  //     tft.setCursor(2, 30);
-  //     tft.print(F("BMP Temperature= "));
-  //     tft.print(bmp.readTemperature());
-  //     tft.println(" C");
-    
-  //     tft.setCursor(2, 50);
-  //     tft.print(F("Humidity:"));
-  //     tft.setTextSize(2);
-  //     tft.print(h);
-  //     tft.setTextSize(2);
+  tft.setCursor(115, 85);
+  tft.setTextColor(ILI9341_DARKGREY, ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.println("H.I.");
+  tft.setCursor(115, 107);
+  tft.print(hI);
 
-  //     tft.setCursor(2, 70);
-  //     tft.print("Moisture Value:");
-  //     tft.setTextSize(2);
-  //     tft.print(conVal);
-  //     tft.print("%");
-  //     tft.setTextSize(2);
+  tft.drawLine(180, 76, 180, 138, ILI9341_GREEN);
 
-      
+  tft.setCursor(185, 85);
+  tft.setTextColor(ILI9341_DARKGREY, ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.println("PRESSURE");
+  tft.setCursor(185, 107);
+  tft.print(bmp.readPressure()/100);
+  tft.setTextSize(2);
+  tft.print(" hPa");
 
-  //     tft.setCursor(2, 90);
-  //     tft.print("Pressure= ");
-  //     tft.print((bmp.readPressure()-23875.39)/1000);
-  //     tft.println(" kPa");
+  //RECTANGLE 3 - displays the soil moisture reading converted to percentage
+  //            - displays the approximated altitude
+  tft.drawRect(1, 138, tft.width()-2, 100, ILI9341_GREEN);
 
-  //     tft.setCursor(2, 110);
-  //     tft.print("Approx. Altitude = ");
-  //     tft.print(bmp.readAltitude(1013.25)); /* Adjusted to local forecast! */
-  //     tft.println(" m");
+  tft.setCursor(5, 150);
+  tft.setTextColor(ILI9341_DARKGREY, ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.print("SOIL MOISTURE: ");
+  tft.setCursor(190, 150);
+  tft.print(conVal);
+  tft.setTextSize(2);
+  tft.print("%");
+
+  tft.setCursor(5, 180);
+  tft.setTextColor(ILI9341_DARKGREY, ILI9341_WHITE);
+  tft.setTextSize(2);
+  tft.println("APPROX.");
+  tft.setCursor(5, 200);
+  tft.print("ALTITUDE: ");
+  tft.setCursor(140, 200);
+  tft.print(bmp.readAltitude(1013.25));
+  tft.setTextSize(2);
+  tft.print(" m");
 }
