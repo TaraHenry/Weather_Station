@@ -7,7 +7,6 @@ This file creates your application.
 
 # from crypt import methods
 import site 
-import json
 
 from app import app, Config,  mongo, Mqtt
 from flask import escape, render_template, request, jsonify, send_file, redirect, make_response, send_from_directory 
@@ -19,133 +18,49 @@ from os.path import join, exists
 from time import time, ctime
 from math import floor
  
- 
+
+
 
 #####################################
 #   Routing for your application    #
 #####################################
 
-     
-
-@app.route('/api/set/combination', methods=['POST'])
-def set_combination():
-    if request.method == 'POST':
-        try:
-            # Extract passcode from form data
-            form = request.form
-            passcode = escape(form.get("passcode"))
-            print(passcode)
-            passcodeInt = int(passcode)
-            passcode = str(passcode)
-            # Check if passcode is a 4-digit integer
-            if  len(passcode) == 4 and type(passcodeInt) == int :
-                # Update passcode in the database
-                success = mongo.update_code(passcode)   
-            if success:
-                return jsonify({"status": "complete", "data": "complete"})
-            else:
-                return jsonify({"status": "failed", "data": "failed"})
-        except Exception as e:
-            print(f"set_combination error: f{str(e)}") 
-
-    
- # 2. CREATE ROUTE FOR '/api/check/combination'
-@app.route('/api/check/combination', methods=['POST'])
-def check_combination():
-# Retrieve the passcode from the 'code' collection in the database
-    passcode = request.form.get('passcode')
-
-    if request.method == "POST":
-        try:
-            # Validate passcode against the 'code' collection
-            count = mongo.check_code(passcode)
-            if count > 0:
-                return jsonify({"status": "complete", "data": "complete"})
-        except Exception as e:
-            msg = str(e)
-            print(f"check_combination Error: {msg}")
-        return jsonify({"status": "failed", "data": "failed"})
-
-# 3. CREATE ROUTE FOR '/api/update' might need o change
-@app.route('/api/update', methods=['POST'])
-def update_data():
-    '''Updates the 'radar' collection'''
-    if request.method == "POST":
-        try:
-            jsonDoc= request.get_json()
-            # Update the document in the 'code' collection with the new passcode
-
-            timestamp = datetime.now().timestamp()
-            timestamp = floor(timestamp)
-            jsonDoc['timestamp'] = timestamp
-
-            Mqtt.publish("620154033",json.dumps(jsonDoc))
-            Mqtt.publish("620154033_pub",json.dumps(jsonDoc))
-            Mqtt.publish("620154033_sub",json.dumps(jsonDoc))
-
-            print(f"MQTT: {jsonDoc}")
-
-            item = mongo.insert_data(jsonDoc)
-            if item:
-                return jsonify({"status": "complete", "data": "complete"})
-        except Exception as e:
-            msg = str(e)
-            print(f"update Error: {msg}")
-        return jsonify({"status": "failed", "data": "failed"})
-
-# 4. CREATE ROUTE FOR '/api/reserve/<start>/<end>'
-@app.route('/api/reserve/<start>/<end>', methods=['GET']) 
-def getAllRange(start,end):   
-    start = int(start)
-    end = int(end)
-    '''RETURNS ALL THE DATA FROM THE DATABASE THAT EXIST IN BETWEEN THE START AND END TIMESTAMPS'''
- 
-    if request.method == "GET":
-        '''Add your code here to complete this route'''
-        try:
-            item = mongo.getAllRange(start,end)
-            data= list(item)
-            if data:
-                return jsonify({"status":"complete","data": data})
-            
-        except Exception as e:
-            print(f"getAllRange error: f{str(e)}") 
-        return jsonify({"status":"not found","data":[]})
+# @app.route('/api/climo/get/<start>/<end>', methods=['GET']) 
+# def get_all(start,end):   
+#     '''RETURNS ALL THE DATA FROM THE DATABASE THAT EXIST IN BETWEEN THE START AND END TIMESTAMPS'''
+   
+#     if request.method == "GET":
+#         '''Add your code here to complete this route'''
+#         try:
+#             timestamp = mongo.getAllInRange(start, end)
+#             data = list(timestamp)
+#             if data:
+#                 return jsonify({"status":"found","data": data})
+#         except Exception as e:
+#             print(f"get_timestamp error: f{str(e)}") 
+#     # FILE DATA NOT EXIST
+#     return jsonify({"status":"not found","data":[]})
+   
 
 
 
-# 5. CREATE ROUTE FOR '/api/avg/<start>/<end>'
-@app.route('/api/avg/<start>/<end>', methods=['GET'])
-def calculate_avg_reserve(start, end):
- # Call function to calculate average
-     if request.method == 'GET':
-        try:
-            average = mongo.calculate_avg_reserve(start, end)
-            if average:
-                return jsonify({"status": "complete", "data": average})
-        except Exception as e:
-            return jsonify({"status": "failed", "data": 0})
+
 
 
 @app.route('/api/file/get/<filename>', methods=['GET']) 
 def get_images(filename):   
-    '''Returns requested file from uploads folder'''
+    '''RETURNS REQUESTED FILE FROM UPLOADS FOLDER'''
    
     if request.method == "GET":
-        directory   = join( getcwd(), Config.UPLOADS_FOLDER) 
-        filePath    = join( getcwd(), Config.UPLOADS_FOLDER, filename) 
-
-        # RETURN FILE IF IT EXISTS IN FOLDER
-        if exists(filePath):        
-            return send_from_directory(directory, filename)
-        
+        '''Add your code here to complete this route'''
         # FILE DOES NOT EXIST
-        return jsonify({"status":"file not found"}), 404
+    return jsonify({"status":"file not found"}), 404
+
 
 
 @app.route('/api/file/upload',methods=["POST"])  
 def upload():
-    '''Saves a file to the uploads folder'''
+    '''SAVES A FILE TO THE UPLOADS FOLDER'''
     
     if request.method == "POST": 
         file     = request.files['file']
@@ -160,6 +75,12 @@ def upload():
 # The functions below should be applicable to all Flask apps. #
 ###############################################################
 
+
+@app.route('/<file_name>.txt')
+def send_text_file(file_name):
+    """Send your static text file."""
+    file_dot_text = file_name + '.txt'
+    return app.send_static_file(file_dot_text)
 
 @app.after_request
 def add_header(response):
@@ -176,3 +97,6 @@ def add_header(response):
 def page_not_found(error):
     """Custom 404 page."""    
     return jsonify({"status": 404}), 404
+
+
+

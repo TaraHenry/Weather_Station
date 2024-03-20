@@ -15,7 +15,7 @@ class MQTT:
     # ID = f"IOT_B_1000"
     ID = f"IOT_B_{randint(1,1000000)}"
 
-    #  DEFINE ALL TOPICS TO SUBSCRIBE TO
+    #  1. DEFINE ALL TOPICS TO SUBSCRIBE TO. BELOW ARE SOME EXAMPLES. YOUR ARE REQUIRED TO CHANGE THESE TO TOPICS THAT FITS YOUR USE CASE
     sub_topics = [("620154033_pub", 0), ("620154033", 0), ("620154033_sub", 0)] #  A list of tuples of (topic, qos). Both topic and qos must be present in the tuple.
 
 
@@ -32,14 +32,15 @@ class MQTT:
         self.client.on_disconnect   = self.on_disconnect
         self.client.on_subscribe    = self.on_subscribe
 
-        # REGISTER CALLBACK FUNCTION FOR EACH TOPIC
+
+        # 3. REGISTER CALLBACK FUNCTION(S) FOR EACH TOPIC USING THE self.client.message_callback_add("topic",self.function) FUNCTION
+        # WHICH TAKES A TOPIC AND THE NAME OF THE CALLBACK FUNCTION YOU HAVE CREATED FOR THIS SPECIFIC TOPIC
         self.client.message_callback_add("620154033", self.update)
-        self.client.message_callback_add("620154033_pub", self.toggle)
-        self.client.message_callback_add("620154033_sub", self.toggle)
+        # self.client.message_callback_add("620154033_pub", self.toggle)
+         
 
-
-        # ADD MQTT SERVER AND PORT INFORMATION BELOW
-        self.client.connect_async("www.yanacreations.com", 1883, 60)
+        # 4. UPDATE MQTT SERVER AND PORT INFORMATION BELOW
+        self.client.connect_async("dbs.msjrealtms.com", 1883, 60)
        
 
 
@@ -81,29 +82,17 @@ class MQTT:
             print("MQTT: Unexpected Disconnection.")
    
 
-    # DEFINE CALLBACK FUNCTIONS FOR EACH TOPIC
+    # 2. DEFINE CALLBACK FUNCTIONS(S) BELOW FOR EACH TOPIC(S) THE BACKEND SUBSCRIBES TO 
     def update(self, client, userdata, msg):
         try:
             topic   = msg.topic
             payload = msg.payload.decode("utf-8")
-            # print(payload) # UNCOMMENT WHEN DEBUGGING  
+            print(payload) # UNCOMMENT WHEN DEBUGGING  
             
             update  = loads(payload) # CONVERT FROM JSON STRING TO JSON OBJECT  
-            print(update) 
+            self.mongo.addUpdate(update) # INSERT INTO DATABASE 
 
         except Exception as e:
-            print(f"MQTT: GDP Error: {str(e)}")
+            print(f"MQTT: Update Error: {str(e)}")
+ 
 
-    def toggle(self,client, userdata, msg):    
-        '''Process messages from Frontend'''
-        try:
-            topic   = msg.topic
-            payload = msg.payload.decode("utf-8")
-            # print(payload) # UNCOMMENT WHEN DEBUGGING
-            update  = loads(payload) # CONVERT FROM JSON STRING TO JSON OBJECT              
-            print(update)
-
-        except Exception as e:
-            print(f"MQTT: toggle Error - {str(e)}")
-
-     

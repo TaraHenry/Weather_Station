@@ -15,7 +15,7 @@ class Config(object):
     UPLOADS_FOLDER                          = environ.get('UPLOADS_FOLDER') 
     IMAGE_FOLDER                            = environ.get('IMAGE_FOLDER') 
 
-    ENV                                     = environ.get('FLASK_DEBUG') 
+    ENV                                     = environ.get('FLASK_ENV') 
     FLASK_RUN_PORT                          = environ.get('FLASK_RUN_PORT') 
     FLASK_RUN_HOST                          = environ.get('FLASK_RUN_HOST') 
 

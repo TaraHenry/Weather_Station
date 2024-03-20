@@ -13,22 +13,13 @@
 #include "Adafruit_ILI9341.h"
 #include <Wire.h>
 #include <Adafruit_BMP280.h>
+#include "DHT.h"
 
 //############### IMPORT HEADER FILES ##################
-// #ifndef NTP_H
-// #include "NTP.h"
-// #endif
-
-// #ifndef MQTT_H
-// #include "mqtt.h"
-// #endif
 
 #ifndef FORECAST_H
 #include "foreCast.h"
 #endif
-
-// ADD YOUR IMPORTS HERE
-#include "DHT.h"
 
 #ifndef _WIFI_H 
 #include <WiFi.h>
@@ -65,11 +56,6 @@
 #define TFT_MOSI  23
 #define TFT_MISO  19
 
-#define BOX_WIDTH 50
-#define BOX_HEIGHT 50
-#define SPACING 5
-#define MARGIN 10
-
 // IMPORT FONTS FOR TFT DISPLAY
 #include <Fonts/FreeSansBold18pt7b.h>
 #include <Fonts/FreeSansBold9pt7b.h> 
@@ -96,23 +82,22 @@
 
 
 // MQTT CLIENT CONFIG  
-// static const char* pubtopic      = "620154033";                    // Add your ID number here
-// static const char* subtopic[]    = {"620154033_sub","/elet2415"};  // Array of Topics(Strings) to subscribe to
-// static const char* mqtt_server   = "www.yanacreations.com";         // Broker IP address or Domain name as a String
+static const char* pubtopic      = "620154033";                    // Add your ID number here
+static const char* subtopic[]    = {"620154033_sub","/elet2415"};  // Array of Topics(Strings) to subscribe to
+static const char* mqtt_server   = "dbs.msjrealtms.com";         // Broker IP address or Domain name as a String
 
-// static uint16_t mqtt_port        = 1883;
+static uint16_t mqtt_port        = 1883;
 
-// // WIFI CREDENTIALS
-// const char* ssid       = "MonaConnect";     // Add your Wi-Fi ssid
-// const char* password   = "";    // Add your Wi-Fi password 
+// WIFI CREDENTIALS
+const char* ssid       = "MonaConnect";     // Add your Wi-Fi ssid
+const char* password   = "";    // Add your Wi-Fi password 
 
-
-// // TASK HANDLES 
-// TaskHandle_t xMQTT_Connect          = NULL; 
-// TaskHandle_t xNTPHandle             = NULL;  
-// TaskHandle_t xLOOPHandle            = NULL;  
-// TaskHandle_t xUpdateHandle          = NULL;
-// TaskHandle_t xButtonCheckeHandle    = NULL;  
+// TASK HANDLES 
+TaskHandle_t xMQTT_Connect          = NULL; 
+TaskHandle_t xNTPHandle             = NULL;  
+TaskHandle_t xLOOPHandle            = NULL;  
+TaskHandle_t xUpdateHandle          = NULL;
+TaskHandle_t xButtonCheckeHandle    = NULL;   
 
 // FUNCTION DECLARATION   
 void checkHEAP(const char* Name);   // RETURN REMAINING HEAP SIZE FOR A TASK
@@ -122,15 +107,21 @@ void callback(char* topic, byte* payload, unsigned int length);
 void initialize(void);
 bool publish(const char *topic, const char *payload); // PUBLISH MQTT MESSAGE(PAYLOAD) TO A TOPIC
 void vButtonCheck( void * pvParameters );
-void vUpdate( void * pvParameters );  
-bool isNumber(double number);
+void vUpdate( void * pvParameters );
  
 
 /* Declare your functions below */ 
-// double convert_Celsius_to_fahrenheit(double c);
-// double convert_fahrenheit_to_Celsius(double f);
-// double calcHeatIndex(double Temp, double Humid);
 void display();
+double calcHeatIndex(double t, double h);
+double calcSoilValue();
+
+#ifndef NTP_H
+#include "NTP.h"
+#endif
+
+#ifndef MQTT_H
+#include "mqtt.h"
+#endif
 
 /* Init class Instances for the DHT22 etcc */
 DHT dht(DHTPIN, DHTTYPE);  
@@ -139,6 +130,7 @@ double h;   //humidity read by the DHT sensor
 double t;   //temperature read by the DHT sensor
 double bt;  //temperature read by the BMP sensor
 int conVal; //value of the soil moisture sensor readings after conversion
+int soilVal;//value of soil moisture before conversion
 double hI;  //heat index calculated using temperature and humidity
 
 /* Initialize class objects*/
@@ -161,9 +153,8 @@ void setup() {
   Wire.begin(21, 22); 
   pinMode(DHTPIN, INPUT);
   pinMode(soil_m, INPUT);
-  // initialize();     // INIT WIFI, MQTT & NTP 
+  initialize();     // INIT WIFI, MQTT & NTP 
   // vButtonCheckFunction(); // UNCOMMENT IF USING BUTTONS INT THIS LAB, THEN ADD LOGIC FOR INTERFACING WITH BUTTONS IN THE vButtonCheck FUNCTION
-  //display();
 }
   
 
@@ -185,26 +176,13 @@ void loop() {
   h = dht.readHumidity();
   Serial.print("Humidity =  ");
   Serial.print(h);
-  Serial.print("%");
+  Serial.println("%");
           
-  double ft = (t * 9.0/5.0) + 32;
-  double HI = -42.379 + (2.04901523 * ft) + (10.14333127 * h) + (-0.22475541 * ft * h) + (-0.00683783 * pow(ft, 2))  + (-0.05481717 * pow(h,2)) + (0.00122874 * pow(ft, 2) * h)  + (0.00085282 * ft * pow(h,2)) + (-0.00000199 * pow(ft, 2) * pow(h,2));
-  hI =  (5.0/9.0) * (HI - 32);
+  hI = calcHeatIndex(t, h);
   Serial.print("Heat Index =  ");
-  Serial.print(hI);
+  Serial.println(hI);
 
-  int soilVal = analogRead(soil_m);
-  Serial.println(soilVal);
-  conVal = map(soilVal, 1500, 3900, 100, 0);
-
-  if (conVal < 0)
-  {
-    conVal = 0;
-  }
-  else if (conVal >= 100)
-  {
-    conVal = 100;
-  }
+  conVal = calcSoilValue();
   Serial.print(F("Soil Moisture = "));
   Serial.print(conVal);
   Serial.println("%");
@@ -222,7 +200,6 @@ void loop() {
   display();
 
   vTaskDelay(1000 / portTICK_PERIOD_MS);
-  //tft.fillScreen(0);
 }
 
 
@@ -239,146 +216,114 @@ void loop() {
 //     }
 // }
 
-// void vUpdate( void * pvParameters )  {
-//     configASSERT( ( ( uint32_t ) pvParameters ) == 1 );    
+void vUpdate( void * pvParameters )  {
+    configASSERT( ( ( uint32_t ) pvParameters ) == 1 );    
            
-//     for( ;; ) {
-//           // #######################################################
-//           // ## This function must PUBLISH to topic every second. ##
-//           // #######################################################
+    for( ;; ) {
+      // #######################################################
+      // ## This function must PUBLISH to topic every second. ##
+      // #######################################################
    
-//           // 1. Read Humidity and save in variable below
-//           double h = dht.readHumidity();
-           
-//           // 2. Read temperature as Celsius   and save in variable below 
-//           double t = dht.readTemperature();
+      double h = dht.readHumidity();
+      double t = dht.readTemperature();
+      double bt = bmp.readTemperature();
+      double p = bmp.readPressure();
+      double a = bmp.readAltitude(1013.25);
 
-//           if(isNumber(t)){
-//               // ##Publish update according to ‘{"id": "student_id", "timestamp": 1702212234, "temperature": 30, "humidity":90, "heatindex": 30}’
+      // 1. Create JSon object
+      StaticJsonDocument<1000> doc;
+      // 2. Create message buffer/array to store serialized JSON object
+      char message[1100]  = { 0 };
+      // 3. Add key:value pairs to JSon object based on above schema
+      doc["id"]                 = "620154033";
+      doc["timestamp"]          = getTimeStamp();
+      doc["temperature"]        = t;
+      doc["bmp_temp"]           = bt;
+      doc["humidity"]           = h;
+      doc["heatindex"]          = calcHeatIndex(t,h);
+      doc["soilMoisture"]       = calcSoilValue();
+      doc["pressure"]           = p;
+      doc["altitude"]           = a;
 
-//               // 1. Create JSon object
-//               StaticJsonDocument<1000> doc;
-//               // 2. Create message buffer/array to store serialized JSON object
-//               char message[1100]  = { 0 };
-//               // 3. Add key:value pairs to JSon object based on above schema
-//               doc["id"]                 = "620154033";
-//               doc["timestamp"]          = getTimeStamp();
-//               doc["temperature"]        = t;
-//               doc["humidity"]           = h;
-//               doc["heatindex"]          = calcHeatIndex(t,h);
-//               // 4. Seralize / Covert JSon object to JSon string and store in message array
-//               serializeJson(doc, message); 
-//               // 5. Publish message to a topic subscribed to by both backend and frontend                
-//               if(mqtt.connected()){
-//                 publish(pubtopic, message);
-//               }
-//           }  
-//         vTaskDelay(1000 / portTICK_PERIOD_MS);  
-//     }
-// }
+      // 4. Seralize / Covert JSon object to JSon string and store in message array
+      serializeJson(doc, message); 
+      Serial.println(message);
+      // 5. Publish message to a topic subscribed to by both backend and frontend                
+      if(mqtt.connected()){
+        publish(pubtopic, message);
+      }
+      vTaskDelay(1000 / portTICK_PERIOD_MS); 
+    }  
+     
+}
 
-// unsigned long getTimeStamp(void) {
-//           // RETURNS 10 DIGIT TIMESTAMP REPRESENTING CURRENT TIME
-//           time_t now;         
-//           time(&now); // Retrieve time[Timestamp] from system and save to &now variable
-//           return now;
-// }
+unsigned long getTimeStamp(void) {
+          // RETURNS 10 DIGIT TIMESTAMP REPRESENTING CURRENT TIME
+          time_t now;         
+          time(&now); // Retrieve time[Timestamp] from system and save to &now variable
+          return now;
+}
 
-// void callback(char* topic, byte* payload, unsigned int length) {
-//   // ############## MQTT CALLBACK  ######################################
-//   // RUNS WHENEVER A MESSAGE IS RECEIVED ON A TOPIC SUBSCRIBED TO
+void callback(char* topic, byte* payload, unsigned int length) {
+  // ############## MQTT CALLBACK  ######################################
+  // RUNS WHENEVER A MESSAGE IS RECEIVED ON A TOPIC SUBSCRIBED TO
   
-//   Serial.printf("\nMessage received : ( topic: %s ) \n",topic ); 
-//   char *received = new char[length + 1] {0}; 
+  Serial.printf("\nMessage received : ( topic: %s ) \n",topic ); 
+  char *received = new char[length + 1] {0}; 
   
-//   for (int i = 0; i < length; i++) { 
-//     received[i] = (char)payload[i];    
-//   }
+  for (int i = 0; i < length; i++) { 
+    received[i] = (char)payload[i];    
+  }
 
-//   // PRINT RECEIVED MESSAGE
-//   Serial.printf("Payload : %s \n",received);
+  // PRINT RECEIVED MESSAGE
+  Serial.printf("Payload : %s \n",received);
 
  
-//   // CONVERT MESSAGE TO JSON
-//   StaticJsonDocument<1000> doc;
-//   DeserializationError error = deserializeJson(doc, received);  
+  // CONVERT MESSAGE TO JSON
+  StaticJsonDocument<1000> doc;
+  DeserializationError error = deserializeJson(doc, received);  
 
-//   if (error) {
-//     Serial.print("deserializeJson() failed: ");
-//     Serial.println(error.c_str());
-//     return;
-//   }
+  if (error) {
+    Serial.print("deserializeJson() failed: ");
+    Serial.println(error.c_str());
+    return;
+  }
 
 
-//   // PROCESS MESSAGE
-//   const char* type = doc["type"]; 
-//   // ‘{"type": "controls", "brightness": 255, "leds": 7, "color": { "r": 255, "g": 255, "b": 255, "a": 1 } }’
- 
+  // PROCESS MESSAGE
+  const char* type = doc["type"]; 
 
-//   if (strcmp(type, "controls") == 0){
-//     // 1. EXTRACT ALL PARAMETERS: NODES, RED,GREEN, BLUE, AND BRIGHTNESS FROM JSON OBJECT
-//     int brightness  = doc["brightness"]; 
-//     int nodes       = doc["leds"];
-//     int red         = doc["color"]["r"];
-//     int green       = doc["color"]["g"];
-//     int blue        = doc["color"]["b"];
-//     // 2. ITERATIVELY, TURN ON LED(s) BASED ON THE VALUE OF NODES. Ex IF NODES = 2, TURN ON 2 LED(s)
-//     for (int i = 0; i < nodes; i++)
-//     {
-//       leds[i] = CRGB(red, green, blue);
-//       FastLED.setBrightness(brightness);
-//       FastLED.show();
-//       delay(50);
-//     }
-//     // 3. ITERATIVELY, TURN OFF ALL REMAINING LED(s).
-//     for(int j = nodes; j < NUM_LEDS; j++)
-//     {
-//       leds[j] = CRGB::Black;
-//       FastLED.setBrightness( brightness );
-//       FastLED.show();
-//       delay(50);
-//     }
-//   }
-// }
+  if (strcmp(type, "sensors") == 0){
+    // 1. EXTRACT ALL PARAMETERS: NODES, RED,GREEN, BLUE, AND BRIGHTNESS FROM JSON OBJECT
+    int temp        = doc["temperature"]; 
+    int btemp       = doc["bmp_temp"];
+    int humid       = doc["humidity"];
+    int heatIndex   = doc["heatindex"];
+    int soilmoist   = doc["soilMoisture"];
+    int pressure    = doc["pressure"];
+    int altitude    = doc["altitude"];
+  }
+}
 
-// bool publish(const char *topic, const char *payload){   
-//     bool res = false;
-//     try{
-//       res = mqtt.publish(topic,payload);
-//       // Serial.printf("\nres : %d\n",res);
-//       if(!res){
-//         res = false;
-//         throw false;
-//       }
-//     }
-//     catch(...){
-//       Serial.printf("\nError (%d) >> Unable to publish message\n", res);
-//     }
-//   return res;
-// }
+bool publish(const char *topic, const char *payload){   
+    bool res = false;
+    try{
+      res = mqtt.publish(topic,payload);
+      // Serial.printf("\nres : %d\n",res);
+      if(!res){
+        res = false;
+        throw false;
+      }
+    }
+    catch(...){
+      Serial.printf("\nError (%d) >> Unable to publish message\n", res);
+    }
+  return res;
+}
 
 
 
 // //***** Complete the util functions below ******
-
-// double convert_Celsius_to_fahrenheit(double c){    
-//   // CONVERTS INPUT FROM °C TO °F. RETURN RESULTS
-//   return (c * 9.0/5.0) + 32;
-// }
-
-// double convert_fahrenheit_to_Celsius(double f){    
-//     // CONVERTS INPUT FROM °F TO °C. RETURN RESULT 
-//   return (5.0/9.0) * (f - 32);   
-// }
-
-// double calcHeatIndex(double Temp, double Humid){
-//     // CALCULATE AND RETURN HEAT INDEX USING EQUATION FOUND AT https://byjus.com/heat-index-formula/#:~:text=The%20heat%20index%20formula%20is,an%20implied%20humidity%20of%2020%25
-
-//   double ft = convert_Celsius_to_fahrenheit(Temp);
-//   double hI = -42.379 + (2.04901523 * ft) + (10.14333127 * Humid) + (-0.22475541 * ft * Humid) + (-0.00683783 * pow(ft, 2))  + (-0.05481717 * pow(Humid,2)) + (0.00122874 * pow(ft, 2) * Humid)  + (0.00085282 * ft * pow(Humid,2)) + (-0.00000199 * pow(ft, 2) * pow(Humid,2));
-//   return convert_fahrenheit_to_Celsius(hI);
-// }
-
 
 void display(){
   //Section to display the temperature value, Humidity, Soil Moisture in Percentage,Pressure, and Altitude on the TFT Display
@@ -470,4 +415,27 @@ void display(){
   tft.print(bmp.readAltitude(1013.25));
   tft.setTextSize(2);
   tft.print(" m");
+}
+
+double calcHeatIndex(double t, double h){
+    // CALCULATE AND RETURN HEAT INDEX USING EQUATION FOUND AT https://byjus.com/heat-index-formula/#:~:text=The%20heat%20index%20formula%20is,an%20implied%20humidity%20of%2020%25
+
+  double ft = (t * 9.0/5.0) + 32;
+  double HI = -42.379 + (2.04901523 * ft) + (10.14333127 * h) + (-0.22475541 * ft * h) + (-0.00683783 * pow(ft, 2))  + (-0.05481717 * pow(h,2)) + (0.00122874 * pow(ft, 2) * h)  + (0.00085282 * ft * pow(h,2)) + (-0.00000199 * pow(ft, 2) * pow(h,2));
+  hI =  (5.0/9.0) * (HI - 32);
+  return hI;
+}
+
+double calcSoilValue(){    
+  soilVal = analogRead(soil_m);
+  conVal = map(soilVal, 1500, 3900, 100, 0);
+  if (conVal < 0)
+  {
+    conVal = 0;
+  }
+  else if (conVal >= 100)
+  {
+    conVal = 100;
+  }  
+  return conVal; 
 }
