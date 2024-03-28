@@ -18,7 +18,7 @@ export const useMqttStore =  defineStore('mqtt', ()=>{
     const mqtt              = ref(null);
     const host              = ref("www.yanacreations.com");  // Host Name or IP address
     const port              = ref(9002);  // Port number
-    const payload           = ref({"id":"620154033","type":"ultrasonic","radar":0,"waterheight":0,"reserve":0,"percentage":0} ); // Set initial values for payload
+    const payload           = ref({"id":"620154033","timestamp": 1700000000,"celsTemperature":0,"fahrTemperature":0,"bmp_temp":0,"humidity":0, "heatindex":0, "soilMoisture":0, "pressure":0, "altitude":0} ); // Set initial values for payload
     const payloadTopic      = ref("");
     const subTopics         = ref({});
  

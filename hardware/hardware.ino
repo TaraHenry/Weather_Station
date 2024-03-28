@@ -84,7 +84,7 @@
 // MQTT CLIENT CONFIG  
 static const char* pubtopic      = "620154033";                    // Add your ID number here
 static const char* subtopic[]    = {"620154033_sub","/elet2415"};  // Array of Topics(Strings) to subscribe to
-static const char* mqtt_server   = "dbs.msjrealtms.com";         // Broker IP address or Domain name as a String
+static const char* mqtt_server   = "www.yanacreations.com";         // Broker IP address or Domain name as a String
 
 static uint16_t mqtt_port        = 1883;
 
@@ -237,7 +237,8 @@ void vUpdate( void * pvParameters )  {
       // 3. Add key:value pairs to JSon object based on above schema
       doc["id"]                 = "620154033";
       doc["timestamp"]          = getTimeStamp();
-      doc["temperature"]        = t;
+      doc["celsTemperature"]    = t;
+      doc["fahrTemperature"]    = (t * 9.0/5.0) + 32;
       doc["bmp_temp"]           = bt;
       doc["humidity"]           = h;
       doc["heatindex"]          = calcHeatIndex(t,h);
@@ -295,7 +296,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   if (strcmp(type, "sensors") == 0){
     // 1. EXTRACT ALL PARAMETERS: NODES, RED,GREEN, BLUE, AND BRIGHTNESS FROM JSON OBJECT
-    int temp        = doc["temperature"]; 
+    int ctemp       = doc["celsTemperature"];
+    int ftemp       = doc["fahrTemperature"];
     int btemp       = doc["bmp_temp"];
     int humid       = doc["humidity"];
     int heatIndex   = doc["heatindex"];
@@ -380,14 +382,18 @@ void display(){
   tft.println("H.I.");
   tft.setCursor(115, 107);
   tft.print(hI);
+  tft.setTextSize(1);
+  tft.print("o");
+  tft.setTextSize(2);
+  tft.print("F");
 
-  tft.drawLine(180, 76, 180, 138, ILI9341_GREEN);
+  tft.drawLine(192, 76, 192, 138, ILI9341_GREEN);
 
-  tft.setCursor(185, 85);
+  tft.setCursor(195, 85);
   tft.setTextColor(ILI9341_DARKGREY, ILI9341_WHITE);
   tft.setTextSize(2);
   tft.println("PRESSURE");
-  tft.setCursor(185, 107);
+  tft.setCursor(195, 107);
   tft.print(bmp.readPressure()/100);
   tft.setTextSize(2);
   tft.print(" hPa");

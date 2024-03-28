@@ -25,27 +25,59 @@ from math import floor
 #   Routing for your application    #
 #####################################
 
-# @app.route('/api/climo/get/<start>/<end>', methods=['GET']) 
-# def get_all(start,end):   
-#     '''RETURNS ALL THE DATA FROM THE DATABASE THAT EXIST IN BETWEEN THE START AND END TIMESTAMPS'''
+@app.route('/api/weather/get/<start>/<end>', methods=['GET']) 
+def get_all(start,end):   
+    '''RETURNS ALL THE DATA FROM THE DATABASE THAT EXIST IN BETWEEN THE START AND END TIMESTAMPS'''
+    start = int(start)
+    end = int(end)
+    if request.method == "GET":
+        '''Add your code here to complete this route'''
+        try:
+            item = mongo.getAll(start, end)
+            data = list(item)
+            # print()
+            if data:
+                return jsonify({"status":"found","data": data})
+        except Exception as e:
+            print(f"get_all error: f{str(e)}") 
+    # FILE DATA NOT EXIST
+    return jsonify({"status":"not found","data":[]})
    
-#     if request.method == "GET":
-#         '''Add your code here to complete this route'''
+@app.route('/api/update', methods=['POST']) 
+def update_weather():      
+    if request.method == "POST":
+        try:
+            jsonDoc= request.get_json()
+            # Update the document in the 'code' collection with the new passcode
+
+            timestamp = datetime.now().timestamp()
+            timestamp = floor(timestamp)
+            jsonDoc['timestamp'] = timestamp
+
+            Mqtt.publish("620154033",mongo.dumps(jsonDoc))
+            Mqtt.publish("620154033_pub",mongo.dumps(jsonDoc))
+            Mqtt.publish("620154033_sub",mongo.dumps(jsonDoc))
+
+            print(f"MQTT: {jsonDoc}")
+
+            item = mongo.addUpdate(jsonDoc)
+            if item:
+                return jsonify({"status": "complete", "data": "complete"})
+        except Exception as e:
+            msg = str(e)
+            print(f"update Error: {msg}")
+        return jsonify({"status": "failed", "data": "failed"})
+
+# @app.route('/api/avg/<start>/<end>', methods=['GET'])
+# def get_average_temp(start, end):
+#     '''Returns the average of the 'temp' field/variable, using all documents found between specified start and end timestamps'''
+#     if request.method == 'GET':
 #         try:
-#             timestamp = mongo.getAllInRange(start, end)
-#             data = list(timestamp)
-#             if data:
-#                 return jsonify({"status":"found","data": data})
+#             average = mongo.calculate_avg(start, end)
+#             if average:
+#                 return jsonify({"status": "complete", "data": average})
 #         except Exception as e:
-#             print(f"get_timestamp error: f{str(e)}") 
-#     # FILE DATA NOT EXIST
-#     return jsonify({"status":"not found","data":[]})
-   
-
-
-
-
-
+#             return jsonify({"status": "failed", "data": 0})
 
 @app.route('/api/file/get/<filename>', methods=['GET']) 
 def get_images(filename):   

@@ -1,49 +1,63 @@
 <template>
-    <v-container fluid align=" center" color=" surface" class="vg-surface" >
+  <!-- <div>
+    <meta http-equiv="refresh" content="10"> 
+  </div> -->
+    <v-container fluid align=" center" color="surface" class="surface" >
       <v-row class="row1" max-width="1200px" justify="center" align="center" padding="1">
           <v-col class="col col1" >
               <v-sheet class="pa-2 bg-background " height="250">
-                  <v-divider></v-divider>
+                  
                   <v-text-field label="Start date" type="Date" density="compact" solo-inverted class="mr-5" max-width="300px" flat v-model="start"></v-text-field>
                   <v-text-field label="End date" type="Date" density="compact" solo-inverted class="mr-5" max-width="300px" flat v-model="end"></v-text-field>
                   
                   <v-spacer></v-spacer>
-                  <VBtn @click="updateLineCharts(); updateCards(); " text="Analyze" color="surface" tonal></VBtn>
-                  </v-sheet> 
-          </v-col>
-          <!-- <v-col class="col col1">
-                <v-card class="pa-2 bg-background" flat height="250px" align="center">
-                    <v-text-field class="mr-5" label="Start date" type="Date" density="compact" variant="solo" style="max-width: 300px;" v-model="start"></v-text-field>
-                    <v-text-field class="mr-5" label="End date" type="Date" density="compact" variant="solo" style="max-width: 300px;" v-model="end"></v-text-field>
-          </v-col> -->
-          <v-col class="col col2" cols="4" align="center" > 
-              <v-card title="Average" width="250" outlines color="surface"  density="compact" rounded="lg" border subtitle="For the selected period">
-                  <v-card-item align="center" >
-                      <span class="text-h1" >
-                          {{ avg.value}}
-                        <span class="text-caption">GaL</span>
-                      </span>
-                  </v-card-item>
-              </v-card>
+                  <v-btn @click="updateLineCharts(); updateScatterCharts();" text="Analyze" color="tertiaryContainer" tonal></v-btn>
+              </v-sheet> 
           </v-col>
       </v-row>
-
-      <v-row max-width="1200px" justify="start" align="center">
-          <v-col class="col col1" cols="12" align = 'center'>
-            <v-sheet border max="100">
-              <figure class="highcharts-figure">
-                  <div id="container"></div>
-              </figure>
-            </v-sheet>
-          </v-col>
-
-          <v-col class="col col2" cols="12" align="center">
-            <v-sheet border max="100">
-              <figure class="highcharts-figure">
-                  <div id="container0"></div>
-              </figure>
-            </v-sheet>
-          </v-col>
+        <!-- <v-col cols="4" align="center">
+          <v-card class="ma-2" title="Average Temperature" width="250" outlines color="tertiaryContainer" density="comfortable" rounded="lg" border subtitle="For the selected period">
+            <v-card-item>
+              <span class="text-h1 text-onTertiaryContainer">
+                {{ celsTemperature.avg }}
+                <span class="text-caption">Cels</span>
+              </span>
+            </v-card-item>
+          </v-card>
+        </v-col> -->
+        <v-row style="max-width: 1200px;">
+            <!-- COLUMN 1 -->
+            <v-col cols="6">
+                <figure class="highcharts-figure">
+                    <div id="container"></div>
+                </figure>
+            </v-col>
+            <!-- COLUMN 2 -->
+            <v-col cols="6">
+                <figure class="highcharts-figure">
+                    <div id="container0"></div>
+                </figure>
+            </v-col>
+        </v-row> 
+        <v-row style="max-width: 1200px;">
+            <!-- COLUMN 1 -->
+            <v-col cols="6">
+                <figure class="highcharts-figure">
+                    <div id="container1"></div>
+                </figure>
+            </v-col>
+            <!-- COLUMN 2 -->
+            <v-col cols="6">
+                <figure class="highcharts-figure">
+                    <div id="container2"></div>
+                </figure>
+            </v-col>
+            <!-- COLUMN 3 -->
+            <v-col cols="12">
+                <figure class="highcharts-figure">
+                    <div id="container3"></div>
+                </figure>
+            </v-col>
         </v-row>
   </v-container>
 </template>
@@ -59,99 +73,200 @@ Exporting(Highcharts);
 more(Highcharts);
 
 // IMPORTS
-import { useMqttStore } from "@/store/mqttStore"; // Import Mqtt Store
-
-import { useAppStore } from "@/store/appStore";
-import {
-onBeforeUnmount,
-onMounted,
-reactive,
-ref
-} from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
+ 
+import { useAppStore } from "@/store/appStore";
+import { useMqttStore } from "@/store/mqttStore"; // Import Mqtt Store
+import { storeToRefs } from "pinia";
+
 
 // VARIABLES
 const Mqtt = useMqttStore();
 const AppStore = useAppStore();
 const router = useRouter();
 const route = useRoute();
+const { payload, payloadTopic } = storeToRefs(Mqtt);
 var start = ref(null);
 var end = ref(null);
-const WaterManagLine = ref(null); // Chart object
-const HeighWaterLine = ref(null); // Chart object
-var average= ref(null);
-var avg= reactive({ value: 0 });
-// var reserve= reactive({ value: 0 });
+
+const TempvsHumiLine = ref(null); // Chart object
+const PressVsAltLine = ref(null); // Chart object
+const SoilMoistureChart = ref(null);
+const TempvsHILine   = ref(null);
+const DHTvsBMPLine   = ref(null);
+
+
 // FUNCTIONS
 
 const CreateCharts = async () => {
   // TEMPERATURE CHART
-  WaterManagLine.value = Highcharts.chart("container", {
+  TempvsHumiLine.value = Highcharts.chart("container", {
     chart: { zoomType: "x" },
-    title: { text: "Water Management Analysis", align: "left" },
+    title: { text: "Temperature vs. Humidity Analysis", align: "left" },
     yAxis: {
       title: {
-        text: "Water Reserve",
+        text: "Temperature",
         style: { color: "#000000" },
       },
-      labels: { format: "{value} Gal" },
+      labels: { format: "{value} °C" },
     },
 
     tooltip: {
-      pointFormat: "Water Reserve: {point.x} Gal ",
+      pointFormat: "Temperature: {point.x} °C ",
     },
     xAxis: {
-      type: "datetime",
-      title: { text: "Time", style: { color: "#000000" } },
+      title: { text: "Humidity", style: { color: "#000000" } },
+      labels: { format: "{value} %" },
     },
-    tooltip: { shared: true },
+    tooltip: { 
+      shared:true,
+      pointFormat: 'Humidity: {point.x} % <br/> Temperature: {point.y} °C' 
+    }, 
     series: [
       {
-        name: "Reserve",
+        name: "Celsius Temperature",
         type: "line",
         data: [],
         turboThreshold: 0,
         color: Highcharts.getOptions().colors[0],
       },
-    
+      {
+        name: "Humidity",
+        type: "line",
+        data: [],
+        turboThreshold: 0,
+        color: Highcharts.getOptions().colors[1],
+      },    
     ],
   });
 
-
-  HeighWaterLine.value = Highcharts.chart("container0", {
+  PressVsAltLine.value = Highcharts.chart("container2", {
     chart: { zoomType: "x" },
     title: {
-      text: "Height and Water Level Correlation Analysis",
+      text: "Pressure and Altitude Correlation Analysis",
       align: "left",
     },
     yAxis: {
       title: {
-        text: "Height",
+        text: "Pressure",
         style: { color: "#000000" },
       },
-      labels: { format: "{value} in" },
+      labels: { format: "{value} Pa" },
     },
 
     xAxis: {
-      title: { text: "Water Height", style: { color: "#000000" } },
-      labels: { format: "{value} in" },
+      title: { text: "Altitude", style: { color: "#000000" } },
+      labels: { format: "{value} m" },
     },
     tooltip: {
-      shared: true,
-      pointFormat: "Water Height {point.x} °C ",
+      shared:true,
+      pointFormat: 'Altitude: {point.x} m <br/> Pressure: {point.y} Pa' 
     },
     series: [
       {
         name: "Analysis",
-        type: "scatter",
+        type: "spline",
         data: [],
         turboThreshold: 0,
         color: Highcharts.getOptions().colors[0],
       },
     ],
   });
+  
+  DHTvsBMPLine.value = Highcharts.chart("container1", {
+    chart: { zoomType: "x" },
+    title: { text: " DHT Temperature and BMP Temperature Comparison", align: "left" },
+    yAxis: {
+      title: {
+        text: "DHT Temperature",
+        style: { color: "#000000" },
+      },
+      labels: { format: "{value} °C" },
+    },
+    xAxis: {
+      title: { text: "BMP Temperature", style: { color: "#000000" } },
+      labels: { format: "{value} °C" },
+    },
+    tooltip: { 
+      shared:true,
+      pointFormat: 'BMP Temperature: {point.x} °C <br/> DHT Temperature: {point.y} °C',
+    },
+    series: [
+      {
+        name: "DHT",
+        type: "line",
+        data: [],
+        turboThreshold: 0,
+        color: Highcharts.getOptions().colors[0],
+      },
+      {
+        name: "BMP",
+        type: "line",
+        data: [],
+        turboThreshold: 0,
+        color: Highcharts.getOptions().colors[1],
+      },    
+    ],
+  });
 
- 
+  TempvsHILine.value = Highcharts.chart("container0", {
+    chart: { zoomType: 'x' },
+        title: { text: 'Temperature & Heat Index Analysis', align: 'left' },
+        subtitle: { text: 'The heat index, also known as the "apparent temperature," is a measure that combines air temperature and \
+        relative humidity to assess how hot it feels to the human body. The relationship between heat index and air temperature is \
+        influenced by humidity levels. As humidity increases, the heat  index also rises, making the perceived temperature higher \
+        than the actual air temperature.', align: 'left'},
+        yAxis: {
+            title: { text: 'Temperature' , style:{color:'#000000'}},
+            labels: { format: '{value} °C' }
+        },
+        xAxis: {
+            type: 'datetime',
+            title: { text: 'Heat Index', style:{color:'#000000'} },
+            labels: { format: '{value} °F' }
+        },
+        tooltip: { 
+            shared:true,
+            pointFormat: 'Heat Index: {point.x} °F <br/> Temperature: {point.y} °C' },
+        series: [
+        {
+            name: 'Temperature',
+            type: 'spline',
+            data: [],
+            turboThreshold: 0,
+            color: Highcharts.getOptions().colors[0]
+        },
+        {
+            name: 'Heat Index',
+            type: 'spline',
+            data: [],
+            turboThreshold: 0,
+            color: Highcharts.getOptions().colors[1]
+        } ],
+    });
+
+  SoilMoistureChart.value = Highcharts.chart('container3', {
+        chart: { zoomType: 'x' },
+        title: { text: 'Soil Moisture Analysis', align: 'left' },
+        yAxis: {
+            labels: { format: '{value} %' }
+        },
+        xAxis: {
+            type: 'datetime',
+            title: { text: 'Time', style:{color:'#000000'} },
+        },
+        tooltip: { shared:true },
+        series: [
+            {
+                name: 'Soil Moisture',
+                type: 'scatter',
+                data: [],
+                turboThreshold: 0,
+                color: Highcharts.getOptions().colors[0]
+            }
+        ],
+    });
 };
 
 onMounted(() => {
@@ -170,93 +285,60 @@ onBeforeUnmount(() => {
   Mqtt.unsubcribeAll();
 });
 
-// const updateCards = async () => {
-//     //  Avg, Spread/Range
-//     if(!!start.value && !!end.value){
-    
-//         // 1. Convert start and end dates collected fron TextFields to 10 digit timestamps
-//         let startDate = new Date(start.value).getTime() / 1000;
-//         let endDate = new Date(end.value).getTime() / 1000;
-        
-//         // 2. Fetch data from backend by calling the API functions
-//         const rese = await AppStore.calculate_avg_reserve(startDate, endDate);
-//         // Update the reserve variable with the average value
-          
-//         console.log(rese);
-//         reserve.value = rese[0].reser.toFixed(1)*10;
-
-//       }
-//   }; 
-
-  const updateCards = async () => {
-  if (!!start.value && !!end.value) {
-
-    // 1. Convert start and end dates collected fron TextFields to 10 digit timestamps
-    let startDate = new Date(start.value).getTime() / 1000;
-    let endDate = new Date(end.value).getTime() / 1000;
-    
-    // 2. Fetch data from backend by calling the API functions
-    const average = await AppStore.calculate_avg_reserve(startDate, endDate);
-    
-    console.log(average);
-    avg.value = average[0].average.toFixed(1)*10;
-   
-  }
-};
-
-
 const updateLineCharts = async () => {
     if (!!start.value && !!end.value) {
       // Convert output from Textfield components to 10 digit timestamps
       let startDate = new Date(start.value).getTime() / 1000;
       let endDate = new Date(end.value).getTime() / 1000;
       // Fetch data from backend
-      const data = await AppStore.getAllInRange(startDate, endDate);
+      const data = await AppStore.getAll(startDate, endDate);
       // Create arrays for each plot
-      let reserve = [];
-      let waterheight = [];
+      let dhtvsbmp = [];
+      let tempvshI = [];
+      let tempvsHum = [];
+      let pressvsAlt = [];
+
+        // Iterate through data variable and transform object to format recognized by highcharts
+        data.forEach(row => {
+            tempvsHum.push({"x": parseFloat(row.humidity.toFixed(2)), "y": parseFloat(row.dht_temp.toFixed(2)) });
+            tempvshI.push({"x": parseFloat(row.heatindex.toFixed(2)), "y": parseFloat(row.dht_temp.toFixed(2)) });
+            dhtvsbmp.push({"x": parseFloat(row.bmp_temp.toFixed(2)), "y": parseFloat(row.dht_temp.toFixed(2)) });
+            pressvsAlt.push({"x": parseFloat(row.altitude.toFixed(2)), "y": parseFloat(row.pressure.toFixed(2)) });
+        });
 
    
-      // Iterate through data variable and transform object to format recognized by highcharts
-     
-      data.forEach((row) => {
-        reserve.push({x: row.timestamp * 1000,y: parseFloat(row.reserve.toFixed(2)),});
-        waterheight.push({x: row.timestamp * 1000,y: parseFloat(row.waterheight.toFixed(2)),});
-        
-      });
-      console.log(reserve);
-      console.log(waterheight);
       // Add data to Temperature and Heat Index chart
-      WaterManagLine.value.series[0].setData(reserve);
-      HeighWaterLine.value.series[0].setData(waterheight);
-
+      TempvsHILine.value.series[0].setData(tempvshI);
+      // Add data to Temperature and Humidity chart
+      TempvsHumiLine.value.series[0].setData(tempvsHum);
+      // Add data to DHT and BMP chart
+      DHTvsBMPLine.value.series[0].setData(dhtvsbmp);
+      // Add data to Pressure and Altitude chart
+      PressVsAltLine.value.series[0].setData(pressvsAlt);
     }
-  };
+  }; 
 
+const updateScatterCharts = async ()=>{
+    if(!!start.value && !!end.value){
+        // Convert output from Textfield components to 10 digit timestamps
+        let startDate = new Date(start.value).getTime() / 1000;
+        let endDate = new Date(end.value).getTime() / 1000;
+        
+        // Fetch data from backend
+        const data = await AppStore.getAll(startDate,endDate);
 
-// const updateScatter = async () => {
-//   if (!!start.value && !!end.value) {
-//     // Convert output from Textfield components to 10 digit timestamps
-//     let startDate = new Date(start.value).getTime() / 1000;
-//     let endDate = new Date(end.value).getTime() / 1000;
-//     // Fetch data from backend
-//     const data = await AppStore.getAllInRange(startDate, endDate);
-//     // Create arrays for each plot
-//     let scatterPoints1 = [];
-//     // Iterate through data variable and transform object to format recognized by highcharts
-//     data.forEach((row) => {
-//       scatterPoints1.push({
-//         x: parseFloat(row.waterheight.toFixed(2)),
-//         y: parseFloat(row.radar.toFixed(2)),
-//       });
-//     });
-//     // Add data to Temperature and Heat Index chart
-//     HeighWaterLine.value.series[0].setData(scatterPoints1);
-//   }
-// };
+        // Create arrays for each plot
+        let s1 = [];
 
+        // Iterate through data variable and transform object to format recognized by highcharts
+        data.forEach(row => {
+            s1.push({ "x": row.timestamp * 1000 , "y": parseFloat(row.s1.toFixed(2)) });
+        });
 
-   
+        // Add data to Soil Moisture Analysis chart
+        SoilMoistureChart.value.series[0].setData(s1);
+    }
+}
 </script>
 
 <style scoped>
@@ -285,7 +367,7 @@ const updateLineCharts = async () => {
   height: 250;
 }
 
-/* Figure {
-  border: 2px solid black;
-} */
+Figure {
+  border: 2px solid pink;
+}
 </style> 
