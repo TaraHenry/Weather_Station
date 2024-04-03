@@ -2,61 +2,14 @@
   
   <VContainer class="fill-height ">
     <VResponsive class="align-center text-center fill-height">
-      <VImg height="350" class="mb-5" src="@/assets/logo.svg" />
+      
+      <div class="text-body-2 font-weight-light mb-4">Welcome to</div>
 
-      <div class="text-body-2 font-weight-light mb-n1">Welcome to</div>
-
-      <h1 class="text-h2 font-weight-bold">IoT Development Platform</h1>
-      <div class="text-body-1 font-weight-light mt-1">Internet of Things</div>
+      <h1 class="text-h2 font-weight-bold">My Weather Station</h1>
+      <div class="text-body-1 font-weight-bold mt-5">Creator: Tara Henry</div>
  
-
-      <div class="py-14" />
-
-      <VRow class="d-flex align-center justify-center">
-        <VCol cols="auto">
-          <VBtn
-            href="https://vuetifyjs.com/components/all/"
-            min-width="164"
-            rel="noopener noreferrer"
-            target="_blank"
-            variant="text"
-          >
-            <VIcon icon="mdi-view-dashboard" size="large" start />
-
-            Components
-          </VBtn>
-        </VCol>
-
-        <VCol cols="auto">
-          <VBtn
-            color="primary"
-            href="https://vuetifyjs.com/introduction/why-vuetify/#feature-guides"
-            min-width="228"
-            rel="noopener noreferrer"
-            size="x-large"
-            target="_blank"
-            variant="flat"
-          >
-            <VIcon icon="mdi-speedometer" size="large" start />
-
-            Get Started
-          </VBtn>
-        </VCol>
-
-        <VCol cols="auto">
-          <VBtn
-            href="https://community.vuetifyjs.com/"
-            min-width="164"
-            rel="noopener noreferrer"
-            target="_blank"
-            variant="text"
-          >
-            <VIcon icon="mdi-account-group" size="large" start />
-
-            Community
-          </VBtn>
-        </VCol>
-      </VRow>
+      <div class="py-8"/>
+      <VImg height="500" class="mb-5" src="@/assets/logo.svg" />
     </VResponsive>
   </VContainer>
 

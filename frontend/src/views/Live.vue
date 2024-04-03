@@ -1,14 +1,14 @@
 <template>
-    <div>
+    <!-- <div>
     <meta http-equiv="refresh" content="10"> 
-  </div>
+  </div> -->
     <v-container fluid class="bg-background" align="center">
         <!-- ROW 1 -->
-        <v-row justify="center">
-            <v-card class="mt-5 text-primary" color="background" style="max-width: 1200px; max-height: 800px;" flat>
+        <v-col justify="center" style="max-width: 1200px;">
+            <v-card class="text-onPrimary" color="primaryContainer" style="max-width: 1200px; max-height: 800px;" flat>
                 <h1>Temperature and Heat Index</h1>
             </v-card>
-        </v-row>
+        </v-col>
         <v-row>
             <!-- COLUMN 1 -->
             <v-col cols="9">
@@ -29,7 +29,7 @@
                         <span class="text-h3 text-onSecondaryContainer">{{ fahrTemperature }}</span>
                     </v-card-item>
                 </v-card> -->
-                <v-card class="mb-5" style="max-width: 500;" color="secondaryContainer" subtitle="Heat Index (Feels like)">
+                <v-card class="mb-5" style="max-width: 500;" color="background" subtitle="Heat Index (Feels like)">
                     <v-card-item>
                         <span class="text-h2 text-onSecondaryContainer">{{ heatindex }}</span>
                     </v-card-item>
@@ -37,11 +37,11 @@
             </v-col>
         </v-row>
         <!-- ROW 2 -->
-        <v-row justify="center">
-            <v-card class="mt-5 text-primary" color="background" style="max-width: 200px; max-height: 800px;" flat>
+        <v-col justify="center" style="max-width: 1200px;">
+            <v-card class="mt-5 text-onPrimary" color="primaryContainer" style="max-width: 1200px; max-height: 800px;" flat>
                 <h1>Humidity</h1>
             </v-card>
-        </v-row>
+        </v-col>
         <v-row>
             <!-- COLUMN 1 -->
             <v-col cols="9">
@@ -62,8 +62,7 @@
         <!-- ROW 3 -->
         <v-row>
             <v-col cols="6">
-                <v-card class="mt-5 text-primary" color="background" style="max-width: 200px; max-height: 800px;" flat>
-                    <h1>Pressure</h1>
+                <v-card class="mt-5 text-onPrimary" color="primaryContainer" style="max-width: 800px; max-height: 800px;" flat>                    <h1>Pressure</h1>
                 </v-card>
                 <v-card class="mt-4" style="max-width: 800;" color="tertiaryContainer">
                     <v-card-item>
@@ -75,7 +74,7 @@
                 </v-card>
             </v-col> 
             <v-col cols="6">
-                <v-card class="mt-5 text-primary" color="background" style="max-width: 800px; max-height: 800px;" flat>
+                <v-card class="mt-5 text-onPrimary" color="primaryContainer" style="max-width: 800px; max-height: 800px;" flat>
                     <h1>Approximate Altitude</h1>
                 </v-card>
                 <v-card class="mt-4" style="max-width: 800;" color="tertiaryContainer">
@@ -89,11 +88,11 @@
             </v-col>
         </v-row>
         <!-- ROW 4 -->
-        <v-row justify="center" align="center">
-          <v-card class="mt-5 text-primary" color="background" style="max-width: 1200px; max-height: 800px;" flat>
+        <v-col justify="center" style="max-width: 1200px;">
+            <v-card class="mt-5 text-onPrimary" color="primaryContainer" style="max-width: 1200px; max-height: 800px;" flat>
             <h1>Soil Moisture</h1>
           </v-card>
-        </v-row>
+        </v-col>
         <v-row>
             <v-col cols="9">
                 <figure class="highcharts-figure">
@@ -101,11 +100,11 @@
                 </figure>
             </v-col>
             <v-col cols="3">
-                <v-card class="mb-5" style="max-width: 500;" color="secondaryContainer">
+                <v-card class="mb-5" style="max-width: 500;" color="background">
                     <v-card-item>
-                        <v-sheet color="secondaryContainer" class="mt-5" width="200">
+                        <v-sheet color="background" class="mt-5" width="200">
                             <span class="text-h2 text-onSecondaryContainer">{{ soilMoisture }}</span>
-                            <v-slider color="primary" v-model="soilMoisture" max="100%" thumb-label direction="vertical" track-size="60"></v-slider>
+                            <v-slider color="tertiaryContainer" v-model="soilMoisture" max="100%" thumb-label direction="vertical" track-size="60"></v-slider>
                         </v-sheet>
                     </v-card-item>
                 </v-card>
@@ -142,9 +141,9 @@ const tempHiChart = ref(null); // Chart object
 const humiChart   = ref(null); // Chart object
 const soilChart   = ref(null);
 
-const currentPUnit = ref("hPa");
-const currentTUnit = ref("C");
-const currentAUnit = ref("m");
+// const currentPUnit = ref("hPa");
+// const currentTUnit = ref("C");
+// const currentAUnit = ref("m");
 
 // const pressure    = ref({value: null, unit: "Pa"});
 // const altitude    = ref({value: null, unit: "m"});

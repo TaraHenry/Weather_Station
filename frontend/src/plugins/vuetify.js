@@ -17,7 +17,7 @@ const lightMode = {
     primary : "#006064",
     onPrimary : "#FFFFFF",
     primaryContainer : "#80CBC4",
-    onPrimaryContainer : "#001A42",
+    onPrimaryContainer : "#F5F5F5",
     secondary : "#0060AC",
     onSecondary : "#FFFFFF",
     secondaryContainer : "#D4E3FF",
@@ -25,12 +25,12 @@ const lightMode = {
     tertiary : "#006064",
     onTertiary : "#FFFFFF",
     tertiaryContainer : "#F48FB1",
-    onTertiaryContainer : "#FFFFFF",
+    onTertiaryContainer : "#F5F5F5",
     error : "#BA1A1A",
     errorContainer : "#FFDAD6",
     onError : "#FFFFFF",
     onErrorContainer : "#410002",
-    background : "#E0F2F1", // #FEFBFF
+    background : "#F5F5F5", // #FEFBFF
     onBackground : "#1B1B1F",
     surface : "#B2DFDB", // #F0F0F0  , #FFFBFE
     onSurface : "#1B1B1F",
@@ -50,14 +50,15 @@ const lightMode = {
 const darkMode = {
   dark: true,
   colors: {
-    primary : "#B2DFDB",
+    home  : "#FFFFFF",
+    primary : "#9CCC65",
     onPrimary : "#000000",
-    primaryContainer : "#006064",
-    onPrimaryContainer : "#B2DFDB",
+    primaryContainer : "#9CCC65",
+    onPrimaryContainer : "#000000",
     secondary : "#B2DFDB",
     onSecondary : "#00315D",
     secondaryContainer : "#D4E3FF",
-    onSecondaryContainer : "#006064",
+    onSecondaryContainer : "#FFFFFF",
     tertiary : "#DFBBDE",
     onTertiary : "#402843",
     tertiaryContainer : "#B2DFDB",

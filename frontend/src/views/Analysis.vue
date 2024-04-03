@@ -2,7 +2,7 @@
   <!-- <div>
     <meta http-equiv="refresh" content="10"> 
   </div> -->
-    <v-container fluid align=" center" color="surface" class="surface" >
+    <v-container fluid align="center" class="background" >
       <v-row class="row1" max-width="1200px" justify="center" align="center" padding="1">
           <v-col class="col col1" >
               <v-sheet class="pa-2 bg-background " height="250">
@@ -11,7 +11,7 @@
                   <v-text-field label="End date" type="Date" density="compact" solo-inverted class="mr-5" max-width="300px" flat v-model="end"></v-text-field>
                   
                   <v-spacer></v-spacer>
-                  <v-btn @click="updateLineCharts(); updateScatterCharts();" text="Analyze" color="tertiaryContainer" tonal></v-btn>
+                  <v-btn @click="updateLineCharts(); updateScatterCharts();" text="Analyze" color="primaryContainer" tonal></v-btn>
               </v-sheet> 
           </v-col>
       </v-row>
@@ -125,19 +125,19 @@ const CreateCharts = async () => {
     }, 
     series: [
       {
-        name: "Celsius Temperature",
+        name: "Analysis",
         type: "line",
         data: [],
         turboThreshold: 0,
-        color: Highcharts.getOptions().colors[0],
+        color: Highcharts.getOptions().colors[2],
       },
-      {
-        name: "Humidity",
-        type: "line",
-        data: [],
-        turboThreshold: 0,
-        color: Highcharts.getOptions().colors[1],
-      },    
+      // {
+      //   name: "Humidity",
+      //   type: "line",
+      //   data: [],
+      //   turboThreshold: 0,
+      //   color: Highcharts.getOptions().colors[6],
+      // },    
     ],
   });
 
@@ -169,7 +169,7 @@ const CreateCharts = async () => {
         type: "spline",
         data: [],
         turboThreshold: 0,
-        color: Highcharts.getOptions().colors[0],
+        color: Highcharts.getOptions().colors[2],
       },
     ],
   });
@@ -194,19 +194,19 @@ const CreateCharts = async () => {
     },
     series: [
       {
-        name: "DHT",
-        type: "line",
+        name: "Analysis",
+        type: "spline",
         data: [],
         turboThreshold: 0,
-        color: Highcharts.getOptions().colors[0],
+        color: Highcharts.getOptions().colors[6],
       },
-      {
-        name: "BMP",
-        type: "line",
-        data: [],
-        turboThreshold: 0,
-        color: Highcharts.getOptions().colors[1],
-      },    
+      // {
+      //   name: "BMP",
+      //   type: "line",
+      //   data: [],
+      //   turboThreshold: 0,
+      //   color: Highcharts.getOptions().colors[2],
+      // },    
     ],
   });
 
@@ -231,19 +231,20 @@ const CreateCharts = async () => {
             pointFormat: 'Heat Index: {point.x} °F <br/> Temperature: {point.y} °C' },
         series: [
         {
-            name: 'Temperature',
+            name: 'Analysis',
             type: 'spline',
             data: [],
             turboThreshold: 0,
             color: Highcharts.getOptions().colors[0]
         },
-        {
-            name: 'Heat Index',
-            type: 'spline',
-            data: [],
-            turboThreshold: 0,
-            color: Highcharts.getOptions().colors[1]
-        } ],
+        // {
+        //     name: 'Heat Index',
+        //     type: 'spline',
+        //     data: [],
+        //     turboThreshold: 0,
+        //     color: Highcharts.getOptions().colors[1]
+        // } 
+      ],
     });
 
   SoilMoistureChart.value = Highcharts.chart('container3', {
@@ -300,9 +301,9 @@ const updateLineCharts = async () => {
 
         // Iterate through data variable and transform object to format recognized by highcharts
         data.forEach(row => {
-            tempvsHum.push({"x": parseFloat(row.humidity.toFixed(2)), "y": parseFloat(row.dht_temp.toFixed(2)) });
-            tempvshI.push({"x": parseFloat(row.heatindex.toFixed(2)), "y": parseFloat(row.dht_temp.toFixed(2)) });
-            dhtvsbmp.push({"x": parseFloat(row.bmp_temp.toFixed(2)), "y": parseFloat(row.dht_temp.toFixed(2)) });
+            tempvsHum.push({"x": parseFloat(row.humidity.toFixed(2)), "y": parseFloat(row.celsTemperature.toFixed(2)) });
+            tempvshI.push({"x": parseFloat(row.heatindex.toFixed(2)), "y": parseFloat(row.celsTemperature.toFixed(2)) });
+            dhtvsbmp.push({"x": parseFloat(row.bmp_temp.toFixed(2)), "y": parseFloat(row.celsTemperature.toFixed(2)) });
             pressvsAlt.push({"x": parseFloat(row.altitude.toFixed(2)), "y": parseFloat(row.pressure.toFixed(2)) });
         });
 
@@ -332,7 +333,7 @@ const updateScatterCharts = async ()=>{
 
         // Iterate through data variable and transform object to format recognized by highcharts
         data.forEach(row => {
-            s1.push({ "x": row.timestamp * 1000 , "y": parseFloat(row.s1.toFixed(2)) });
+            s1.push({ "x": row.timestamp * 1000 , "y": parseFloat(row.soilMoisture.toFixed(2)) });
         });
 
         // Add data to Soil Moisture Analysis chart
