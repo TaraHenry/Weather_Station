@@ -87,6 +87,7 @@ const AppStore = useAppStore();
 const router = useRouter();
 const route = useRoute();
 const { payload, payloadTopic } = storeToRefs(Mqtt);
+
 var start = ref(null);
 var end = ref(null);
 
@@ -125,19 +126,19 @@ const CreateCharts = async () => {
     }, 
     series: [
       {
-        name: "Analysis",
+        name: "Celsius Temperature",
         type: "line",
         data: [],
         turboThreshold: 0,
         color: Highcharts.getOptions().colors[2],
       },
-      // {
-      //   name: "Humidity",
-      //   type: "line",
-      //   data: [],
-      //   turboThreshold: 0,
-      //   color: Highcharts.getOptions().colors[6],
-      // },    
+      {
+        name: "Humidity",
+        type: "line",
+        data: [],
+        turboThreshold: 0,
+        color: Highcharts.getOptions().colors[6],
+      }  
     ],
   });
 
@@ -170,7 +171,7 @@ const CreateCharts = async () => {
         data: [],
         turboThreshold: 0,
         color: Highcharts.getOptions().colors[2],
-      },
+      }
     ],
   });
   
@@ -179,34 +180,31 @@ const CreateCharts = async () => {
     title: { text: " DHT Temperature and BMP Temperature Comparison", align: "left" },
     yAxis: {
       title: {
-        text: "DHT Temperature",
+        text: "DHT Temperature and BMP Temperatrue",
         style: { color: "#000000" },
       },
       labels: { format: "{value} °C" },
     },
     xAxis: {
-      title: { text: "BMP Temperature", style: { color: "#000000" } },
-      labels: { format: "{value} °C" },
+            type: 'datetime',
+            title: { text: 'Time', style:{color:'#000000'} },
     },
-    tooltip: { 
-      shared:true,
-      pointFormat: 'BMP Temperature: {point.x} °C <br/> DHT Temperature: {point.y} °C',
-    },
+    tooltip: { shared:true },
     series: [
       {
-        name: "Analysis",
+        name: "DHT",
         type: "spline",
         data: [],
         turboThreshold: 0,
         color: Highcharts.getOptions().colors[6],
       },
-      // {
-      //   name: "BMP",
-      //   type: "line",
-      //   data: [],
-      //   turboThreshold: 0,
-      //   color: Highcharts.getOptions().colors[2],
-      // },    
+      {
+        name: "BMP",
+        type: "spline",
+        data: [],
+        turboThreshold: 0,
+        color: Highcharts.getOptions().colors[2],
+      },    
     ],
   });
 
@@ -236,14 +234,7 @@ const CreateCharts = async () => {
             data: [],
             turboThreshold: 0,
             color: Highcharts.getOptions().colors[0]
-        },
-        // {
-        //     name: 'Heat Index',
-        //     type: 'spline',
-        //     data: [],
-        //     turboThreshold: 0,
-        //     color: Highcharts.getOptions().colors[1]
-        // } 
+        }
       ],
     });
 
@@ -294,26 +285,32 @@ const updateLineCharts = async () => {
       // Fetch data from backend
       const data = await AppStore.getAll(startDate, endDate);
       // Create arrays for each plot
-      let dhtvsbmp = [];
-      let tempvshI = [];
+      let celsTemperature = [];
+      let bmp_temp = [];
+      let tempvsHI = [];
       let tempvsHum = [];
       let pressvsAlt = [];
 
         // Iterate through data variable and transform object to format recognized by highcharts
         data.forEach(row => {
-            tempvsHum.push({"x": parseFloat(row.humidity.toFixed(2)), "y": parseFloat(row.celsTemperature.toFixed(2)) });
-            tempvshI.push({"x": parseFloat(row.heatindex.toFixed(2)), "y": parseFloat(row.celsTemperature.toFixed(2)) });
-            dhtvsbmp.push({"x": parseFloat(row.bmp_temp.toFixed(2)), "y": parseFloat(row.celsTemperature.toFixed(2)) });
-            pressvsAlt.push({"x": parseFloat(row.altitude.toFixed(2)), "y": parseFloat(row.pressure.toFixed(2)) });
+            celsTemperature.push({"x" : row.timestamp * 1000, "y": parseFloat(row.celsTemperature.toFixed(2)) });
+            bmp_temp.push({"x" : row.timestamp * 1000, "y": parseFloat(row.bmp_temp.toFixed(2)) });
+            tempvsHI.push({"x" : parseFloat(row.heatindex.toFixed(2)), "y": parseFloat(row.celsTemperature.toFixed(2)) });
+            tempvsHum.push({"x" : parseFloat(row.humidity.toFixed(2)), "y": parseFloat(row.celsTemperature.toFixed(2)) });
+            pressvsAlt.push({"x" : parseFloat(row.altitude.toFixed(2)), "y": parseFloat(row.pressure.toFixed(2)) });
         });
 
    
       // Add data to Temperature and Heat Index chart
-      TempvsHILine.value.series[0].setData(tempvshI);
+      TempvsHILine.value.series[0].setData(tempvsHI);
+      
       // Add data to Temperature and Humidity chart
       TempvsHumiLine.value.series[0].setData(tempvsHum);
+
       // Add data to DHT and BMP chart
-      DHTvsBMPLine.value.series[0].setData(dhtvsbmp);
+      DHTvsBMPLine.value.series[0].setData(celsTemperature);
+      DHTvsBMPLine.value.series[1].setData(bmp_temp);
+
       // Add data to Pressure and Altitude chart
       PressVsAltLine.value.series[0].setData(pressvsAlt);
     }

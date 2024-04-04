@@ -1,7 +1,7 @@
 <template>
-    <!-- <div>
+    <div>
     <meta http-equiv="refresh" content="10"> 
-  </div> -->
+  </div>
     <v-container fluid class="bg-background" align="center">
         <!-- ROW 1 -->
         <v-col justify="center" style="max-width: 1200px;">
@@ -67,9 +67,6 @@
                 <v-card class="mt-4" style="max-width: 800;" color="tertiaryContainer">
                     <v-card-item>
                         <span class="text-h2 text-onTertiaryContainer"> {{ pressure }}</span>
-                        <v-card-actions>
-                            <v-btn @click="Pconvert();" text="Convert" color="text-onTertiaryContainer" variant="tonal"></v-btn>
-                        </v-card-actions>
                     </v-card-item>
                 </v-card>
             </v-col> 
@@ -80,9 +77,6 @@
                 <v-card class="mt-4" style="max-width: 800;" color="tertiaryContainer">
                     <v-card-item>
                         <span class="text-h2 text-onTertiaryContainer">{{ altitude }}</span>
-                        <v-card-actions align="center">
-                            <v-btn @click="Aconvert();" text="Convert" color="text-onTertiaryContainer" variant="tonal" align="center"></v-btn>
-                        </v-card-actions>
                     </v-card-item>
                 </v-card>
             </v-col>
@@ -152,8 +146,6 @@ const points      = ref(10); // Specify the quantity of points to be shown on th
 const shift       = ref(false); // Delete a point from the left side and append a new point to the right side of the graph.
 
 var Tstate = 0;
-var Pstate = 0;
-var Astate = 0;
 // COMPUTED PROPERTIES
 
 const temperature = computed(()=>{
@@ -215,24 +207,6 @@ const Tconvert = async () => {
     }
     else{
         Tstate = 0;
-    }
-};
-
-const Pconvert = async () => {
-    if(Pstate == 0){
-        Pstate = 1;
-    }
-    else{
-        Pstate = 0;
-    }
-};
-
-const Aconvert = async () => {
-    if(Astate == 0){
-        Astate = 1;
-    }
-    else{
-        Astate = 0;
     }
 };
 

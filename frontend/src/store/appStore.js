@@ -22,12 +22,12 @@ export const useAppStore =  defineStore('app', ()=>{
             const response = await fetch(URL, { method: 'GET', signal: signal });
             if (response.ok) {
                 const data = await response.json();
-                console.log(data);
+                // console.log(data);
                 
                 let keys = Object.keys(data);
                 if (keys.includes("status")) {
                     if (data["status"] == "found") {
-                        console.log(data["data"]);
+                        // console.log(data["data"]);
                         return data["data"];
                     }
                     if (data["status"] == "failed") {
